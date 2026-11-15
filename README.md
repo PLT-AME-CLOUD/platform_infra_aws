@@ -4,7 +4,7 @@ AWS infrastructure for deploying a 2-tier microservice application using Amazon 
 
 ## Architecture Overview
 
-![AWS ECS Architecture](../images/AWS_ECS_VPC_Architecture.png)
+![AWS ECS Architecture](./images/AWS_ECS_VPC_Architecture.png)
 
 ┌──────────────────────────────────────────────────────────────────────────────┐
 │                           Supporting Services                                │
