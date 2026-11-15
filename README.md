@@ -6,25 +6,6 @@ AWS infrastructure for deploying a 2-tier microservice application using Amazon 
 
 ![AWS ECS Architecture](./images/AWS_ECS_VPC_Architecture.png)
 
-┌──────────────────────────────────────────────────────────────────────────────┐
-│                           Supporting Services                                │
-│                                                                              │
-│  ┌─────────────────┐  ┌─────────────────┐  ┌──────────────────┐            │
-│  │ ECR Repository  │  │ CloudWatch Logs │  │ Service Discovery │            │
-│  │ app-repo        │  │ /ecs/frontend   │  │ ecsworkshop.local │            │
-│  │ - frontend:tag  │  │ /ecs/backend    │  │ backend.ecswork-  │            │
-│  │ - backend:tag   │  │ (7-day retain)  │  │ shop.local        │            │
-│  └─────────────────┘  └─────────────────┘  └──────────────────┘            │
-│                                                                              │
-│  ┌─────────────────┐  ┌─────────────────┐  ┌──────────────────┐            │
-│  │ ECS Cluster     │  │ IAM Roles       │  │ Security Groups   │            │
-│  │ ecs-cluster     │  │ - Task Exec     │  │ - Public ALB SG   │            │
-│  │ - Frontend Svc  │  │ - Service Role  │  │ - Internal ALB SG │            │
-│  │ - Backend Svc   │  │                 │  │ - ECS SG          │            │
-│  └─────────────────┘  └─────────────────┘  └──────────────────┘            │
-└──────────────────────────────────────────────────────────────────────────────┘
-```
-
 ## Project Structure
 
 ```
