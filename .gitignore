@@ -1,2 +1,6 @@
 *.swp
 *.bak
+
+# Terraform
+.terraform/
+*.tfvars

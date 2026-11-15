@@ -5,5 +5,5 @@ output "github_actions_role_arn" {
 
 output "state_bucket_name" {
   description = "Name of the S3 bucket for Terraform state"
-  value       = aws_s3_bucket.tfstate.id
+  value       = local.state_bucket_id
 }

@@ -1,28 +1,11 @@
-terraform {
-  required_providers {
-    aws = {
-      source  = "hashicorp/aws"
-      version = "~> 5.0"
-    }
-  }
-
-  required_version = ">= 1.10"
-}
-
-provider "aws" {
-  region = var.aws_region
-}
-
-# ──────────────────────────────────────────────────────────────────────────────
-# S3 State Bucket
-# ──────────────────────────────────────────────────────────────────────────────
-
+# Step 1: Create S3 bucket to store Terraform remote state files
 resource "aws_s3_bucket" "tfstate" {
   bucket = var.state_bucket_name
 }
 
+# Step 2: Enable KMS server-side encryption on the state bucket
 resource "aws_s3_bucket_server_side_encryption_configuration" "tfstate" {
-  bucket = aws_s3_bucket.tfstate.id
+  bucket = local.state_bucket_id
   rule {
     apply_server_side_encryption_by_default {
       sse_algorithm = "aws:kms"
@@ -30,35 +13,30 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "tfstate" {
   }
 }
 
+# Step 3: Block all public access to the state bucket
 resource "aws_s3_bucket_public_access_block" "tfstate" {
-  bucket                  = aws_s3_bucket.tfstate.id
+  bucket                  = local.state_bucket_id
   block_public_acls       = true
   block_public_policy     = true
   ignore_public_acls      = true
   restrict_public_buckets = true
 }
 
-# ──────────────────────────────────────────────────────────────────────────────
-# GitHub OIDC Provider
-# ──────────────────────────────────────────────────────────────────────────────
-
+# Step 4: Register GitHub as an OIDC identity provider so Actions can authenticate without long-lived credentials
 resource "aws_iam_openid_connect_provider" "github" {
   url             = "https://token.actions.githubusercontent.com"
   client_id_list  = ["sts.amazonaws.com"]
   thumbprint_list = ["ffffffffffffffffffffffffffffffffffffffff"]
 }
 
-# ──────────────────────────────────────────────────────────────────────────────
-# IAM Role for GitHub Actions
-# ──────────────────────────────────────────────────────────────────────────────
-
+# Step 5: Define a trust policy that allows GitHub Actions to assume a role via OIDC federation
 data "aws_iam_policy_document" "github_actions_trust" {
   statement {
     actions = ["sts:AssumeRoleWithWebIdentity"]
 
     principals {
       type        = "Federated"
-      identifiers = [aws_iam_openid_connect_provider.github.arn]
+      identifiers = [local.oidc_provider_arn]
     }
 
     condition {
@@ -70,16 +48,18 @@ data "aws_iam_policy_document" "github_actions_trust" {
     condition {
       test     = "StringLike"
       variable = "token.actions.githubusercontent.com:sub"
-      values   = ["repo:${var.github_org}/${var.github_repo}:ref:refs/heads/main"]
+      values   = [local.github_actions_sub]
     }
   }
 }
 
+# Step 6: Create the IAM role that GitHub Actions workflows will assume
 resource "aws_iam_role" "github_actions" {
   name               = "github-actions-ecs-workshop"
   assume_role_policy = data.aws_iam_policy_document.github_actions_trust.json
 }
 
+# Step 7: Define the permissions the role needs — S3 state access and EC2 networking for infrastructure management
 data "aws_iam_policy_document" "github_actions_permissions" {
   statement {
     sid = "TerraformState"
@@ -90,8 +70,8 @@ data "aws_iam_policy_document" "github_actions_permissions" {
       "s3:ListBucket",
     ]
     resources = [
-      aws_s3_bucket.tfstate.arn,
-      "${aws_s3_bucket.tfstate.arn}/*",
+      local.state_bucket_arn,
+      "${local.state_bucket_arn}/*",
     ]
   }
 
@@ -101,7 +81,6 @@ data "aws_iam_policy_document" "github_actions_permissions" {
       "ec2:*Vpc*",
       "ec2:*Subnet*",
       "ec2:*InternetGateway*",
-      "ec2:*NatGateway*",
       "ec2:*RouteTable*",
       "ec2:*Route",
       "ec2:*Address*",
@@ -116,6 +95,7 @@ data "aws_iam_policy_document" "github_actions_permissions" {
   }
 }
 
+# Step 8: Attach the permissions policy to the GitHub Actions role
 resource "aws_iam_role_policy" "github_actions" {
   name   = "github-actions-ecs-workshop"
   role   = aws_iam_role.github_actions.id
