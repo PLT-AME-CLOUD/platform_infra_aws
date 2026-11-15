@@ -1,44 +1,68 @@
+# Deploys both the network and ECS stacks to AWS on every push to main.
+# Runs network first, then ECS (which depends on network outputs via remote state).
+
 name: Deploy Infrastructure
 
+# Trigger on every push to the main branch
 on:
   push:
     branches:
       - main
 
+# Ensure only one deployment runs at a time to prevent Terraform state conflicts.
+# Queued runs wait instead of being cancelled.
+concurrency:
+  group: terraform-state
+  cancel-in-progress: false
+
+# OIDC token for AWS authentication, read access for checkout
 permissions:
   id-token: write
   contents: read
 
 jobs:
+  # ------------------------------------------------------------------
+  # Job 1: Deploy the network stack (VPC, subnets, IGW, route tables)
+  # ------------------------------------------------------------------
   deploy-network:
     runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: network-stack
     steps:
+      # Pull the repository so Terraform has access to the configuration files
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # Authenticate to AWS using GitHub OIDC — no long-lived credentials stored
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: us-east-1
 
+      # Install the required Terraform version
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: "1.10.0"
 
+      # Initialize Terraform with S3 backend configuration for remote state
       - name: Terraform Init
         run: terraform init -backend-config=backend.hcl
 
+      # Generate an execution plan using the network tfvars for input values
       - name: Terraform Plan
         run: terraform plan -var-file=network.tfvars -out=tfplan
 
+      # Apply the saved plan to create or update network resources
       - name: Terraform Apply
         run: terraform apply -auto-approve tfplan
 
+  # ------------------------------------------------------------------
+  # Job 2: Deploy the ECS stack (cluster, ALBs, services, auto-scaling)
+  # Runs only after the network stack succeeds.
+  # ------------------------------------------------------------------
   deploy-ecs:
     needs: deploy-network
     runs-on: ubuntu-latest
@@ -46,23 +70,29 @@ jobs:
       run:
         working-directory: ecs-stack
     steps:
+      # Pull the repository so Terraform has access to the configuration files
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # Authenticate to AWS using GitHub OIDC — no long-lived credentials stored
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: us-east-1
 
+      # Install the required Terraform version
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: "1.10.0"
 
+      # Initialize Terraform with S3 backend configuration for remote state
       - name: Terraform Init
         run: terraform init -backend-config=backend.hcl
 
+      # Generate an execution plan; non-sensitive values from tfvars,
+      # sensitive values (hosted_zone_id) injected from GitHub secrets
       - name: Terraform Plan
         run: |
           terraform plan \
@@ -70,5 +100,6 @@ jobs:
             -var="hosted_zone_id=${{ secrets.HOSTED_ZONE_ID }}" \
             -out=tfplan
 
+      # Apply the saved plan to create or update ECS resources
       - name: Terraform Apply
         run: terraform apply -auto-approve tfplan
