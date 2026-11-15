@@ -19,3 +19,4 @@ variable "state_bucket_name" {
   default     = "ecs-workshop-tfstate"
   description = "Name of the S3 bucket for Terraform state"
 }
+
