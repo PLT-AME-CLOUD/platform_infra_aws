@@ -35,6 +35,18 @@ variable "max_capacity" {
   description = "Maximum number of tasks per service for auto-scaling"
 }
 
+variable "scaling_cpu_threshold" {
+  type        = number
+  default     = 50
+  description = "CPU utilization percentage that triggers auto-scaling"
+}
+
+variable "scaling_memory_threshold" {
+  type        = number
+  default     = 50
+  description = "Memory utilization percentage that triggers auto-scaling"
+}
+
 variable "common_tags" {
   type        = map(string)
   default     = {}

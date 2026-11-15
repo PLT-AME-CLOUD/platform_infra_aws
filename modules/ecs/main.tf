@@ -484,7 +484,7 @@ resource "aws_appautoscaling_policy" "frontend_cpu" {
     predefined_metric_specification {
       predefined_metric_type = "ECSServiceAverageCPUUtilization"
     }
-    target_value = 80
+    target_value = var.scaling_cpu_threshold
   }
 }
 
@@ -499,12 +499,12 @@ resource "aws_appautoscaling_policy" "backend_cpu" {
     predefined_metric_specification {
       predefined_metric_type = "ECSServiceAverageCPUUtilization"
     }
-    target_value = 80
+    target_value = var.scaling_cpu_threshold
   }
 }
 
-# Step 20: Add memory-based scaling policies — same 80% threshold as CPU.
-# Both metrics are tracked independently so a spike in either triggers scaling.
+# Step 20: Add memory-based scaling policies — triggers scaling when average
+# memory exceeds the configured threshold.
 
 resource "aws_appautoscaling_policy" "frontend_memory" {
   name               = "frontend-memory-scaling"
@@ -517,7 +517,7 @@ resource "aws_appautoscaling_policy" "frontend_memory" {
     predefined_metric_specification {
       predefined_metric_type = "ECSServiceAverageMemoryUtilization"
     }
-    target_value = 80
+    target_value = var.scaling_memory_threshold
   }
 }
 
@@ -532,6 +532,6 @@ resource "aws_appautoscaling_policy" "backend_memory" {
     predefined_metric_specification {
       predefined_metric_type = "ECSServiceAverageMemoryUtilization"
     }
-    target_value = 80
+    target_value = var.scaling_memory_threshold
   }
 }
