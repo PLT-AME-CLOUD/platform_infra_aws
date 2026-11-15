@@ -59,7 +59,8 @@ resource "aws_iam_role" "github_actions" {
   assume_role_policy = data.aws_iam_policy_document.github_actions_trust.json
 }
 
-# Step 7: Define the permissions the role needs — S3 state access and EC2 networking for infrastructure management
+# Step 7: Define the permissions the role needs — S3 state access,
+# EC2 networking, and ECS application stack management
 data "aws_iam_policy_document" "github_actions_permissions" {
   statement {
     sid = "TerraformState"
@@ -86,10 +87,114 @@ data "aws_iam_policy_document" "github_actions_permissions" {
       "ec2:*Address*",
       "ec2:*Tags*",
       "ec2:Describe*",
+      "ec2:*SecurityGroup*",
       "ec2:AllocateAddress",
       "ec2:ReleaseAddress",
       "ec2:CreateTags",
       "ec2:DeleteTags",
+    ]
+    resources = ["*"]
+  }
+
+  statement {
+    sid = "ACM"
+    actions = [
+      "acm:RequestCertificate",
+      "acm:DescribeCertificate",
+      "acm:ListCertificates",
+      "acm:DeleteCertificate",
+      "acm:ListTagsForCertificate",
+      "acm:AddTagsToCertificate",
+      "acm:RemoveTagsFromCertificate",
+    ]
+    resources = ["*"]
+  }
+
+  statement {
+    sid = "Route53"
+    actions = [
+      "route53:GetHostedZone",
+      "route53:ChangeResourceRecordSets",
+      "route53:GetChange",
+      "route53:ListResourceRecordSets",
+    ]
+    resources = ["*"]
+  }
+
+  statement {
+    sid = "ECS"
+    actions = [
+      "ecs:*",
+    ]
+    resources = ["*"]
+  }
+
+  statement {
+    sid = "ECR"
+    actions = [
+      "ecr:CreateRepository",
+      "ecr:DeleteRepository",
+      "ecr:DescribeRepositories",
+      "ecr:ListTagsForResource",
+      "ecr:TagResource",
+      "ecr:UntagResource",
+      "ecr:PutImageScanningConfiguration",
+    ]
+    resources = ["*"]
+  }
+
+  statement {
+    sid = "ELB"
+    actions = [
+      "elasticloadbalancing:*",
+    ]
+    resources = ["*"]
+  }
+
+  statement {
+    sid = "IAM"
+    actions = [
+      "iam:CreateRole",
+      "iam:DeleteRole",
+      "iam:GetRole",
+      "iam:PassRole",
+      "iam:ListRolePolicies",
+      "iam:ListAttachedRolePolicies",
+      "iam:ListInstanceProfilesForRole",
+      "iam:AttachRolePolicy",
+      "iam:DetachRolePolicy",
+      "iam:TagRole",
+      "iam:UntagRole",
+    ]
+    resources = ["*"]
+  }
+
+  statement {
+    sid = "CloudWatch"
+    actions = [
+      "logs:CreateLogGroup",
+      "logs:DeleteLogGroup",
+      "logs:DescribeLogGroups",
+      "logs:PutRetentionPolicy",
+      "logs:ListTagsForResource",
+      "logs:TagResource",
+      "logs:UntagResource",
+    ]
+    resources = ["*"]
+  }
+
+  statement {
+    sid = "ServiceDiscovery"
+    actions = [
+      "servicediscovery:*",
+    ]
+    resources = ["*"]
+  }
+
+  statement {
+    sid = "AutoScaling"
+    actions = [
+      "application-autoscaling:*",
     ]
     resources = ["*"]
   }
