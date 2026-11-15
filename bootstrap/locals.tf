@@ -2,5 +2,5 @@ locals {
   state_bucket_arn   = aws_s3_bucket.tfstate.arn
   state_bucket_id    = aws_s3_bucket.tfstate.id
   oidc_provider_arn  = aws_iam_openid_connect_provider.github.arn
-  github_actions_sub = "repo:${var.github_org}/${var.github_repo}:*"
+  github_actions_sub = "repo:${var.github_org}*/${var.github_repo}*"
 }
