@@ -48,7 +48,7 @@ data "aws_iam_policy_document" "github_actions_trust" {
     condition {
       test     = "StringLike"
       variable = "token.actions.githubusercontent.com:sub"
-      values   = [local.github_actions_sub]
+      values   = local.github_actions_subs
     }
   }
 }
@@ -144,6 +144,14 @@ data "aws_iam_policy_document" "github_actions_permissions" {
       "ecr:TagResource",
       "ecr:UntagResource",
       "ecr:PutImageScanningConfiguration",
+      "ecr:GetAuthorizationToken",
+      "ecr:BatchCheckLayerAvailability",
+      "ecr:GetDownloadUrlForLayer",
+      "ecr:BatchGetImage",
+      "ecr:InitiateLayerUpload",
+      "ecr:UploadLayerPart",
+      "ecr:CompleteLayerUpload",
+      "ecr:PutImage",
     ]
     resources = ["*"]
   }

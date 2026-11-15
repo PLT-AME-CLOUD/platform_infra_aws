@@ -1,2 +1,2 @@
-github_org = "PLT-AME-CLOUD"
-github_repo = "platform_infra_aws"
+github_org  = "PLT-AME-CLOUD"
+github_repos = ["platform_infra_aws", "application-repo"]

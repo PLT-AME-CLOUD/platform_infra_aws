@@ -3,9 +3,9 @@ variable "github_org" {
   description = "GitHub organization or username that owns the repository"
 }
 
-variable "github_repo" {
-  type        = string
-  description = "GitHub repository name (without the org prefix)"
+variable "github_repos" {
+  type        = list(string)
+  description = "GitHub repository names allowed to assume the OIDC role"
 }
 
 variable "aws_region" {
